@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskList = document.getElementById('task-list');
 
     // URLs da API
-    const API_URL = 'http://localhost:3000';
+    const API_URL = 'https://todo-list-backend-production-c3ef.up.railway.app';
     let token = localStorage.getItem('token');
     let userId = localStorage.getItem('userId');
 

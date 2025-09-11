@@ -190,6 +190,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Adiciona o botão de sair (logout)
+    const logoutButton = document.createElement('button');
+    logoutButton.textContent = 'Sair';
+    logoutButton.onclick = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        token = null;
+        userId = null;
+        checkAuth();
+    };
+    // Coloque o botão de logout antes do título da lista de tarefas
+    todoContainer.prepend(logoutButton);
+
+
     // Eventos para alternar a exibição
     showRegisterLink.addEventListener('click', (e) => {
         e.preventDefault();
