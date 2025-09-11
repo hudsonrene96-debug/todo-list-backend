@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minhas Tarefas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div id="auth-container">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="text" id="login-username" placeholder="Usuário" required>
+                <input type="password" id="login-password" placeholder="Senha" required>
+                <button type="submit">Entrar</button>
+            </form>
+            <p>Não tem uma conta? <a href="#" id="show-register">Cadastre-se</a></p>
+
+            <div id="register-container" style="display: none;">
+                <h2>Cadastro</h2>
+                <form id="register-form">
+                    <input type="text" id="register-username" placeholder="Novo usuário" required>
+                    <input type="password" id="register-password" placeholder="Nova senha" required>
+                    <button type="submit">Cadastrar</button>
+                </form>
+                <p><a href="#" id="show-login">Já tem uma conta? Faça login</a></p>
+            </div>
+        </div>
+
+        <div id="todo-container" style="display: none;">
+            <h1>Minhas Tarefas</h1>
+            <form id="task-form">
+                <input type="text" id="task-input" placeholder="Adicionar nova tarefa..." required>
+                <button type="submit">Adicionar</button>
+            </form>
+            <ul id="task-list"></ul>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+// Importa o Express, Mongoose e CORS
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors'); 
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = 'seu-segredo-super-secreto'; // Mude esta string por uma complexa
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(cors());
+
+// Conexão com o banco de dados MongoDB
+const MONGODB_URI = 'mongodb+srv://hudsonrene96_db_user:yB4q8kGUEJHUtOmW@cluster0.vir5iqs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('Conectado ao MongoDB!'))
+    .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
+
+// Esquema do Mongoose para o modelo de Usuário
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+});
+
+// Modelo de Usuário
+const User = mongoose.model('User', userSchema);
+
+// Esquema do Mongoose para o modelo de Tarefa
+const taskSchema = new mongoose.Schema({
+    text: { type: String, required: true },
+    completed: { type: Boolean, default: false },
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' }
+});
+
+// Modelo de Tarefa
+const Task = mongoose.model('Task', taskSchema);
+
+// Middleware para proteger rotas
+const auth = (req, res, next) => {
+    try {
+        const token = req.header('Authorization').replace('Bearer ', '');
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.userId = decoded.userId;
+        next();
+    } catch (err) {
+        res.status(401).send('Autenticação necessária.');
+    }
+};
+
+// --- Rotas de Autenticação ---
+
+// Rota POST: Registrar um novo usuário
+app.post('/api/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({ username, password: hashedPassword });
+        await user.save();
+        res.status(201).send('Usuário registrado com sucesso!');
+    } catch (error) {
+        res.status(400).send('Erro ao registrar usuário: ' + error.message);
+    }
+});
+
+// Rota POST: Fazer login
+app.post('/api/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(400).send('Usuário não encontrado.');
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).send('Senha incorreta.');
+        }
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token, userId: user._id });
+    } catch (error) {
+        res.status(500).send('Erro no servidor.');
+    }
+});
+
+// --- Rotas de Tarefas (Protegidas) ---
+
+// Rota GET: Listar tarefas do usuário
+app.get('/tarefas', auth, async (req, res) => {
+    try {
+        const tasks = await Task.find({ userId: req.userId });
+        res.status(200).json(tasks);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Rota POST: Criar uma nova tarefa para o usuário
+app.post('/tarefas', auth, async (req, res) => {
+    const task = new Task({
+        text: req.body.text,
+        userId: req.userId // Associa a tarefa ao ID do usuário
+    });
+    try {
+        const newTask = await task.save();
+        res.status(201).json(newTask);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// Rota DELETE: Deletar uma tarefa do usuário
+app.delete('/tarefas/:id', auth, async (req, res) => {
+    try {
+        const deletedTask = await Task.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+        if (!deletedTask) {
+            return res.status(404).json({ message: 'Tarefa não encontrada ou não pertence a este usuário.' });
+        }
+        res.status(200).json({ message: 'Tarefa deletada com sucesso.' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Rota PUT: Atualizar o status de uma tarefa do usuário
+app.put('/tarefas/:id', auth, async (req, res) => {
+    try {
+        const updatedTask = await Task.findOneAndUpdate(
+            { _id: req.params.id, userId: req.userId },
+            { completed: req.body.completed },
+            { new: true }
+        );
+        if (!updatedTask) {
+            return res.status(404).json({ message: 'Tarefa não encontrada ou não pertence a este usuário.' });
+        }
+        res.status(200).json(updatedTask);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// O servidor deve ser "escutado" por último, depois de todas as rotas
+app.listen(PORT, () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+});
