@@ -7,10 +7,14 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'seu-segredo-super-secreto'; // Mude esta string por uma complexa
 
 const app = express();
-const PORT = process.env.env.PORT || 3000;
+// A variável de ambiente do Render é acessada diretamente.
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors());
+// Configuração do CORS para permitir requisições do seu front-end
+app.use(cors({
+    origin: 'http://localhost:8000' // Substitua pelo URL do seu front-end em produção
+}));
 
 // Conexão com o banco de dados MongoDB
 const MONGODB_URI = 'mongodb+srv://hudsonrene96_db_user:yB4q8kGUEJHUtOmW@cluster0.vir5iqs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';

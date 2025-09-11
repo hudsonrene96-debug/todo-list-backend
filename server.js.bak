@@ -7,10 +7,13 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'seu-segredo-super-secreto'; // Mude esta string por uma complexa
 
 const app = express();
-const PORT = process.env.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors());
+// Configuração do CORS para permitir requisições do seu front-end
+app.use(cors({
+    origin: 'http://localhost:8000' // Substitua pelo URL do seu front-end em produção
+}));
 
 // Conexão com o banco de dados MongoDB
 const MONGODB_URI = 'mongodb+srv://hudsonrene96_db_user:yB4q8kGUEJHUtOmW@cluster0.vir5iqs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
@@ -122,12 +125,20 @@ app.delete('/api/tarefas/:id', auth, async (req, res) => {
     }
 });
 
-// Rota PUT: Atualizar o status de uma tarefa do usuário
+// Rota PUT: Atualizar uma tarefa do usuário
 app.put('/api/tarefas/:id', auth, async (req, res) => {
     try {
+        const updates = {};
+        if (req.body.text !== undefined) {
+            updates.text = req.body.text;
+        }
+        if (req.body.completed !== undefined) {
+            updates.completed = req.body.completed;
+        }
+
         const updatedTask = await Task.findOneAndUpdate(
             { _id: req.params.id, userId: req.userId },
-            { completed: req.body.completed },
+            updates,
             { new: true }
         );
         if (!updatedTask) {
