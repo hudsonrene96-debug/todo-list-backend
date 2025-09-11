@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskList = document.getElementById('task-list');
 
     // URLs da API
-    const API_URL = 'http://localhost:3000';
+    const API_URL = 'https://todo-list-backend-5qku.onrender.com';
     let token = localStorage.getItem('token');
     let userId = localStorage.getItem('userId');
 

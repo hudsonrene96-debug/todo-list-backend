@@ -28,15 +28,14 @@
             </div>
         </div>
 
-       <div id="todo-container" style="display: none;">
-		<button id="logout-button">Sair</button>
-		<h1>Minhas Tarefas</h1>
-		<form id="task-form">
-			<input type="text" id="task-input" placeholder="Adicionar nova tarefa..." required>
-			<button type="submit">Adicionar</button>
-		</form>
-			<ul id="task-list"></ul>
-		</div>
+        <div id="todo-container" style="display: none;">
+            <h1>Minhas Tarefas</h1>
+            <form id="task-form">
+                <input type="text" id="task-input" placeholder="Adicionar nova tarefa..." required>
+                <button type="submit">Adicionar</button>
+            </form>
+            <ul id="task-list"></ul>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>

@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskList = document.getElementById('task-list');
 
     // URLs da API
-    const API_URL = 'https://todo-list-backend-production-c3ef.up.railway.app';
+    const API_URL = 'https://todo-list-backend-5qku.onrender.com';
     let token = localStorage.getItem('token');
     let userId = localStorage.getItem('userId');
 
@@ -63,9 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('userId', userId);
                 checkAuth();
             } else {
-                alert(data.message || 'Erro no login.');
+                // Mensagem de erro no console para melhor depuração
+                console.error(data.message || 'Erro no login.');
+                alert(data.message || 'Erro no login.'); // Usando alert() temporariamente para feedback imediato
             }
         } catch (error) {
+            console.error('Erro de rede:', error);
             alert('Erro de rede. Verifique a conexão com o servidor.');
         }
     });
@@ -86,51 +89,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 showLogin();
             } else {
                 const data = await response.text();
+                console.error('Erro no cadastro:', data);
                 alert(data || 'Erro no cadastro.');
             }
         } catch (error) {
+            console.error('Erro de rede:', error);
             alert('Erro de rede. Verifique a conexão com o servidor.');
         }
     });
 
     // --- Funções de Tarefas com autenticação ---
-    
+
     // Rota GET: Buscar tarefas do usuário
     async function renderTasks() {
         taskList.innerHTML = '';
         try {
-            const response = await fetch(`${API_URL}/tarefas`, {
+            const response = await fetch(`${API_URL}/api/tarefas`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             const tasks = await response.json();
-            tasks.forEach(task => {
-                const li = document.createElement('li');
-                li.textContent = task.text;
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = task.completed;
-                checkbox.onclick = () => {
-                    toggleTaskCompleted(task._id, !task.completed);
-                };
+            if (response.ok) {
+                tasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task._id}">
+                        <span>${task.text}</span>
+                        <button class="edit-btn" data-id="${task._id}">Editar</button>
+                        <button class="delete-btn" data-id="${task._id}">Remover</button>
+                    `;
+                    if (task.completed) {
+                        li.classList.add('completed');
+                    }
+                    taskList.appendChild(li);
+                });
 
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Remover';
-                deleteButton.onclick = () => {
-                    deleteTask(task._id);
-                };
+                // Adicionar listeners para os novos botões
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const taskId = e.target.dataset.id;
+                        const taskText = e.target.previousElementSibling.textContent;
+                        editTask(taskId, taskText);
+                    });
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        deleteTask(e.target.dataset.id);
+                    });
+                });
+                document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        toggleTaskCompleted(e.target.dataset.id, e.target.checked);
+                    });
+                });
 
-                li.prepend(checkbox);
-                li.appendChild(deleteButton);
-
-                if (task.completed) {
-                    li.classList.add('completed');
-                }
-                
-                taskList.appendChild(li);
-            });
+            } else {
+                console.error('Erro ao buscar as tarefas:', tasks.message || response.statusText);
+                alert('Não foi possível carregar as tarefas. Verifique se o servidor está rodando.');
+            }
         } catch (error) {
             console.error('Erro ao buscar as tarefas:', error);
             alert('Não foi possível carregar as tarefas. Verifique se o servidor está rodando.');
@@ -140,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Rota POST: Adicionar nova tarefa para o usuário
     async function addTask(text) {
         try {
-            await fetch(`${API_URL}/tarefas`, {
+            await fetch(`${API_URL}/api/tarefas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -158,8 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Rota DELETE: Deletar tarefa do usuário
     async function deleteTask(id) {
+        if (!confirm('Tem certeza de que deseja remover esta tarefa?')) {
+            return;
+        }
         try {
-            await fetch(`${API_URL}/tarefas/${id}`, {
+            await fetch(`${API_URL}/api/tarefas/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -172,10 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Rota PUT: Atualizar status da tarefa do usuário
+    // Rota PUT: Atualizar o status de uma tarefa do usuário (agora com edição de texto)
     async function toggleTaskCompleted(id, completed) {
         try {
-            await fetch(`${API_URL}/tarefas/${id}`, {
+            await fetch(`${API_URL}/api/tarefas/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -187,6 +207,28 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Erro ao atualizar a tarefa:', error);
             alert('Não foi possível atualizar a tarefa.');
+        }
+    }
+
+    // Nova função para editar o texto da tarefa
+    async function editTask(id, currentText) {
+        const newText = prompt('Editar tarefa:', currentText);
+        if (newText === null || newText.trim() === '') {
+            return;
+        }
+        try {
+            await fetch(`${API_URL}/api/tarefas/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ text: newText })
+            });
+            renderTasks();
+        } catch (error) {
+            console.error('Erro ao editar a tarefa:', error);
+            alert('Não foi possível editar a tarefa.');
         }
     }
 
@@ -214,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         showLogin();
     });
-    
+
     // Adiciona o listener do formulário de tarefas
     taskForm.addEventListener('submit', (e) => {
         e.preventDefault();

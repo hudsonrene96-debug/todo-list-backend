@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'seu-segredo-super-secreto'; // Mude esta string por uma complexa
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
@@ -15,8 +15,8 @@ app.use(cors());
 // Conexão com o banco de dados MongoDB
 const MONGODB_URI = 'mongodb+srv://hudsonrene96_db_user:yB4q8kGUEJHUtOmW@cluster0.vir5iqs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 mongoose.connect(MONGODB_URI)
-    .then(() => console.log('Conectado ao MongoDB!'))
-    .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
+    .then(() => console.log('Conectado ao MongoDB!'))
+    .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // Esquema do Mongoose para o modelo de Usuário
 const userSchema = new mongoose.Schema({
@@ -86,7 +86,7 @@ app.post('/api/login', async (req, res) => {
 // --- Rotas de Tarefas (Protegidas) ---
 
 // Rota GET: Listar tarefas do usuário
-app.get('/tarefas', auth, async (req, res) => {
+app.get('/api/tarefas', auth, async (req, res) => {
     try {
         const tasks = await Task.find({ userId: req.userId });
         res.status(200).json(tasks);
@@ -96,7 +96,7 @@ app.get('/tarefas', auth, async (req, res) => {
 });
 
 // Rota POST: Criar uma nova tarefa para o usuário
-app.post('/tarefas', auth, async (req, res) => {
+app.post('/api/tarefas', auth, async (req, res) => {
     const task = new Task({
         text: req.body.text,
         userId: req.userId // Associa a tarefa ao ID do usuário
@@ -110,7 +110,7 @@ app.post('/tarefas', auth, async (req, res) => {
 });
 
 // Rota DELETE: Deletar uma tarefa do usuário
-app.delete('/tarefas/:id', auth, async (req, res) => {
+app.delete('/api/tarefas/:id', auth, async (req, res) => {
     try {
         const deletedTask = await Task.findOneAndDelete({ _id: req.params.id, userId: req.userId });
         if (!deletedTask) {
@@ -122,12 +122,20 @@ app.delete('/tarefas/:id', auth, async (req, res) => {
     }
 });
 
-// Rota PUT: Atualizar o status de uma tarefa do usuário
-app.put('/tarefas/:id', auth, async (req, res) => {
+// Rota PUT: Atualizar uma tarefa do usuário
+app.put('/api/tarefas/:id', auth, async (req, res) => {
     try {
+        const updates = {};
+        if (req.body.text !== undefined) {
+            updates.text = req.body.text;
+        }
+        if (req.body.completed !== undefined) {
+            updates.completed = req.body.completed;
+        }
+
         const updatedTask = await Task.findOneAndUpdate(
             { _id: req.params.id, userId: req.userId },
-            { completed: req.body.completed },
+            updates,
             { new: true }
         );
         if (!updatedTask) {
