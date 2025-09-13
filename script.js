@@ -13,8 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskList = document.getElementById('task-list');
     const taskCategoryInput = document.getElementById('task-category');
     const filterCategorySelect = document.getElementById('filter-category');
-    const taskDueDateInput = document.getElementById('task-due-date');
     const logoutBtn = document.getElementById('logout-btn');
+
+    // Novos campos de data e status para o formulário de adição
+    const taskStartDateInput = document.getElementById('task-start-date');
+    const taskDueDateInput = document.getElementById('task-due-date');
 
     // Referências ao novo modal de edição
     const editModal = document.getElementById('edit-modal');
@@ -23,7 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const editTaskIdInput = document.getElementById('edit-task-id');
     const editText = document.getElementById('edit-text');
     const editCategory = document.getElementById('edit-category');
+    const editStartDate = document.getElementById('edit-start-date'); // Novo
     const editDueDate = document.getElementById('edit-due-date');
+    const editStatus = document.getElementById('edit-status'); // Novo
 
     // URLs da API
     const API_URL = 'https://todo-list-backend-5qku.onrender.com';
@@ -127,16 +132,40 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 tasks.forEach(task => {
                     const li = document.createElement('li');
+                    
+                    const startDate = task.startDate ? new Date(task.startDate).toLocaleDateString('pt-BR') : 'N/A';
                     const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('pt-BR') : 'N/A';
+                    
+                    // Adiciona a tag de status
+                    let statusClass = '';
+                    let statusText = '';
+                    switch (task.status) {
+                        case 'in-progress':
+                            statusClass = 'tag-in-progress';
+                            statusText = 'Em Progresso';
+                            break;
+                        case 'completed':
+                            statusClass = 'tag-completed';
+                            statusText = 'Concluída';
+                            break;
+                        default:
+                            statusClass = 'tag-to-do';
+                            statusText = 'A Fazer';
+                            break;
+                    }
+
                     li.innerHTML = `
                         <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task._id}">
                         <div class="task-info">
-                            <span>${task.text}</span>
+                            <span>
+                                ${task.text}
+                                <span class="task-status-tag ${statusClass}">${statusText}</span>
+                            </span>
                             <small class="task-details">
-                                Categoria: ${task.category || 'Geral'} | Prazo: ${dueDate}
+                                Categoria: ${task.category || 'Geral'} | Início: ${startDate} | Fim: ${dueDate}
                             </small>
                         </div>
-                        <button class="edit-btn" data-id="${task._id}" data-text="${task.text}" data-category="${task.category}" data-duedate="${task.dueDate}">Editar</button>
+                        <button class="edit-btn" data-id="${task._id}" data-text="${task.text}" data-category="${task.category}" data-start-date="${task.startDate}" data-due-date="${task.dueDate}" data-status="${task.status}">Editar</button>
                         <button class="delete-btn" data-id="${task._id}">Remover</button>
                     `;
                     if (task.completed) {
@@ -150,8 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const taskId = e.target.dataset.id;
                         const taskText = e.target.dataset.text;
                         const taskCategory = e.target.dataset.category;
-                        const taskDueDate = e.target.dataset.duedate;
-                        openEditModal(taskId, taskText, taskCategory, taskDueDate);
+                        const taskStartDate = e.target.dataset.startDate;
+                        const taskDueDate = e.target.dataset.dueDate;
+                        const taskStatus = e.target.dataset.status;
+                        openEditModal(taskId, taskText, taskCategory, taskStartDate, taskDueDate, taskStatus); // Atualizado
                     });
                 });
                 document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -174,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Rota POST: Adicionar nova tarefa para o usuário
-    async function addTask(text, category, dueDate) {
+    async function addTask(text, category, startDate, dueDate) {
         try {
             await fetch(`${API_URL}/api/tarefas`, {
                 method: 'POST',
@@ -182,11 +213,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text, category, dueDate })
+                body: JSON.stringify({ text, category, startDate, dueDate, status: 'to-do' }) // Adiciona o status inicial
             });
             renderTasks();
             taskInput.value = '';
             taskCategoryInput.value = '';
+            taskStartDateInput.value = '';
             taskDueDateInput.value = '';
         } catch (error) {
             alert('Não foi possível adicionar a tarefa.');
@@ -214,13 +246,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Rota PUT: Atualizar o status de uma tarefa do usuário
     async function toggleTaskCompleted(id, completed) {
         try {
+            const status = completed ? 'completed' : 'to-do';
             await fetch(`${API_URL}/api/tarefas/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ completed })
+                body: JSON.stringify({ completed, status }) // Envia o novo status
             });
             renderTasks();
         } catch (error) {
@@ -229,11 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Lógica para abrir e fechar o modal
-    function openEditModal(id, text, category, dueDate) {
+    function openEditModal(id, text, category, startDate, dueDate, status) {
         editTaskIdInput.value = id;
         editText.value = text;
-        editCategory.value = category; // Define a categoria selecionada
+        editCategory.value = category;
+        editStartDate.value = startDate ? startDate.split('T')[0] : '';
         editDueDate.value = dueDate ? dueDate.split('T')[0] : '';
+        editStatus.value = status; // Define o status atual da tarefa
         editModal.style.display = 'flex';
     }
 
@@ -253,7 +288,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const taskId = editTaskIdInput.value;
         const newText = editText.value.trim();
         const newCategory = editCategory.value.trim();
+        const newStartDate = editStartDate.value;
         const newDueDate = editDueDate.value;
+        const newStatus = editStatus.value;
 
         if (newText === '') {
             alert('O texto da tarefa não pode estar vazio.');
@@ -267,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text: newText, category: newCategory, dueDate: newDueDate })
+                body: JSON.stringify({ text: newText, category: newCategory, startDate: newStartDate, dueDate: newDueDate, status: newStatus }) // Envia todos os campos
             });
             editModal.style.display = 'none';
             renderTasks();
@@ -292,9 +329,10 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const taskText = taskInput.value.trim();
         const taskCategory = taskCategoryInput.value.trim() || 'Geral';
+        const taskStartDate = taskStartDateInput.value.trim();
         const taskDueDate = taskDueDateInput.value.trim();
         if (taskText) {
-            addTask(taskText, taskCategory, taskDueDate);
+            addTask(taskText, taskCategory, taskStartDate, taskDueDate);
         }
     });
 
