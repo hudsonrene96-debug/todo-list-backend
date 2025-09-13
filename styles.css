@@ -205,3 +205,36 @@ select:focus {
     color: #000;
     text-decoration: none;
 }
+
+/* Novos estilos para tags de status */
+.task-status-tag {
+    display: inline-block;
+    padding: 0.2em 0.6em;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
+}
+
+.tag-to-do {
+    background-color: #f1c40f; /* Amarelo */
+}
+
+.tag-in-progress {
+    background-color: #3498db; /* Azul */
+}
+
+.tag-completed {
+    background-color: #2ecc71; /* Verde */
+}
+
+/* Novo estilo para o campo de data de início */
+#task-form .input-group,
+#edit-form .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}

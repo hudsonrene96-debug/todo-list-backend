@@ -80,7 +80,9 @@ select:focus {
 }
 
 #task-form {
+    display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
 }
@@ -89,6 +91,7 @@ select:focus {
 #task-category,
 #task-due-date {
     flex-grow: 1;
+    min-width: 150px; /* Adicionando um tamanho mínimo para melhor visualização em telas menores */
 }
 
 #task-list {
@@ -165,7 +168,7 @@ select:focus {
 /* Estilos do Modal */
 .modal {
     position: fixed;
-    z-index: 1000; /* Garante que o modal fique na frente de tudo */
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
