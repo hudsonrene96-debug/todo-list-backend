@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskList = document.getElementById('task-list');
     const taskCategoryInput = document.getElementById('task-category');
     const filterCategorySelect = document.getElementById('filter-category');
-    const taskDueDateInput = document.getElementById('task-due-date'); // Novo campo para o prazo
+    const taskDueDateInput = document.getElementById('task-due-date');
+    const logoutBtn = document.getElementById('logout-btn');
 
     // URLs da API
     const API_URL = 'https://todo-list-backend-5qku.onrender.com';
@@ -25,13 +26,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funções para alternar as telas
     function showLogin() {
-        registerContainer.style.display = 'none';
+        registerForm.style.display = 'none';
+        showRegisterLink.style.display = 'block';
         loginForm.style.display = 'block';
+        showLoginLink.style.display = 'none';
     }
 
     function showRegister() {
         loginForm.style.display = 'none';
-        registerContainer.style.display = 'block';
+        showRegisterLink.style.display = 'none';
+        registerForm.style.display = 'block';
+        showLoginLink.style.display = 'block';
     }
 
     // Função para verificar o status de login
@@ -66,11 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('userId', userId);
                 checkAuth();
             } else {
-                console.error(data.message || 'Erro no login.');
                 alert(data.message || 'Erro no login.');
             }
         } catch (error) {
-            console.error('Erro de rede:', error);
             alert('Erro de rede. Verifique a conexão com o servidor.');
         }
     });
@@ -91,11 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 showLogin();
             } else {
                 const data = await response.text();
-                console.error('Erro no cadastro:', data);
                 alert(data || 'Erro no cadastro.');
             }
         } catch (error) {
-            console.error('Erro de rede:', error);
             alert('Erro de rede. Verifique a conexão com o servidor.');
         }
     });
@@ -120,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 tasks.forEach(task => {
                     const li = document.createElement('li');
-                    const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A';
+                    const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('pt-BR') : 'N/A';
                     li.innerHTML = `
                         <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task._id}">
                         <div class="task-info">
@@ -138,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     taskList.appendChild(li);
                 });
 
-                // Adicionar listeners para os novos botões
                 document.querySelectorAll('.edit-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const taskId = e.target.dataset.id;
@@ -161,11 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
             } else {
-                console.error('Erro ao buscar as tarefas:', tasks.message || response.statusText);
                 alert('Não foi possível carregar as tarefas. Verifique se o servidor está rodando.');
             }
         } catch (error) {
-            console.error('Erro ao buscar as tarefas:', error);
             alert('Não foi possível carregar as tarefas. Verifique se o servidor está rodando.');
         }
     }
@@ -186,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
             taskCategoryInput.value = '';
             taskDueDateInput.value = '';
         } catch (error) {
-            console.error('Erro ao adicionar a tarefa:', error);
             alert('Não foi possível adicionar a tarefa.');
         }
     }
@@ -205,7 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             renderTasks();
         } catch (error) {
-            console.error('Erro ao remover a tarefa:', error);
             alert('Não foi possível remover a tarefa.');
         }
     }
@@ -223,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             renderTasks();
         } catch (error) {
-            console.error('Erro ao atualizar a tarefa:', error);
             alert('Não foi possível atualizar a tarefa.');
         }
     }
@@ -253,24 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             renderTasks();
         } catch (error) {
-            console.error('Erro ao editar a tarefa:', error);
             alert('Não foi possível editar a tarefa.');
         }
     }
-
-    // Adiciona o botão de sair (logout)
-    const logoutButton = document.createElement('button');
-    logoutButton.textContent = 'Sair';
-    logoutButton.onclick = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        token = null;
-        userId = null;
-        checkAuth();
-    };
-    // Coloque o botão de logout antes do título da lista de tarefas
-    todoContainer.prepend(logoutButton);
-
 
     // Eventos para alternar a exibição
     showRegisterLink.addEventListener('click', (e) => {
@@ -282,13 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         showLogin();
     });
-
+    
     // Adiciona o listener do formulário de tarefas
     taskForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const taskText = taskInput.value.trim();
         const taskCategory = taskCategoryInput.value.trim() || 'Geral';
-        const taskDueDate = taskDueDateInput.value.trim(); // Pega o valor do novo input
+        const taskDueDate = taskDueDateInput.value.trim();
         if (taskText) {
             addTask(taskText, taskCategory, taskDueDate);
         }
@@ -297,6 +277,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adiciona o listener para o filtro de categorias
     filterCategorySelect.addEventListener('change', (e) => {
         renderTasks(e.target.value);
+    });
+
+    // Listener para o botão de sair
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        token = null;
+        userId = null;
+        checkAuth();
     });
 
     // Inicia a verificação de autenticação ao carregar a página

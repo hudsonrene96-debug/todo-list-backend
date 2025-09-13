@@ -14,8 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskForm = document.getElementById('task-form');
     const taskInput = document.getElementById('task-input');
     const taskList = document.getElementById('task-list');
-    const taskCategoryInput = document.getElementById('task-category'); // Novo campo para a categoria
-    const filterCategorySelect = document.getElementById('filter-category'); // Menu para filtrar
+    const taskCategoryInput = document.getElementById('task-category');
+    const filterCategorySelect = document.getElementById('filter-category');
+    const taskDueDateInput = document.getElementById('task-due-date'); // Novo campo para o prazo
 
     // URLs da API
     const API_URL = 'https://todo-list-backend-5qku.onrender.com';
@@ -119,11 +120,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 tasks.forEach(task => {
                     const li = document.createElement('li');
+                    const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A';
                     li.innerHTML = `
                         <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task._id}">
                         <div class="task-info">
                             <span>${task.text}</span>
-                            <small class="task-category">${task.category || 'Geral'}</small>
+                            <small class="task-details">
+                                Categoria: ${task.category || 'Geral'} | Prazo: ${dueDate}
+                            </small>
                         </div>
                         <button class="edit-btn" data-id="${task._id}">Editar</button>
                         <button class="delete-btn" data-id="${task._id}">Remover</button>
@@ -138,9 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.edit-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const taskId = e.target.dataset.id;
-                        const taskText = e.target.previousElementSibling.firstElementChild.textContent;
-                        const taskCategory = e.target.previousElementSibling.lastElementChild.textContent;
-                        editTask(taskId, taskText, taskCategory);
+                        const taskElement = e.target.parentElement;
+                        const taskText = taskElement.querySelector('.task-info span').textContent;
+                        const taskCategory = taskElement.querySelector('.task-details').textContent.split('|')[0].replace('Categoria: ', '').trim();
+                        const taskDueDate = taskElement.querySelector('.task-details').textContent.split('|')[1].replace('Prazo: ', '').trim();
+                        editTask(taskId, taskText, taskCategory, taskDueDate);
                     });
                 });
                 document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -165,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Rota POST: Adicionar nova tarefa para o usuário
-    async function addTask(text, category) {
+    async function addTask(text, category, dueDate) {
         try {
             await fetch(`${API_URL}/api/tarefas`, {
                 method: 'POST',
@@ -173,10 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text, category })
+                body: JSON.stringify({ text, category, dueDate })
             });
             renderTasks();
             taskInput.value = '';
+            taskCategoryInput.value = '';
+            taskDueDateInput.value = '';
         } catch (error) {
             console.error('Erro ao adicionar a tarefa:', error);
             alert('Não foi possível adicionar a tarefa.');
@@ -220,8 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Nova função para editar o texto e categoria da tarefa
-    async function editTask(id, currentText, currentCategory) {
+    // Nova função para editar o texto, categoria e prazo da tarefa
+    async function editTask(id, currentText, currentCategory, currentDueDate) {
         const newText = prompt('Editar tarefa:', currentText);
         if (newText === null || newText.trim() === '') {
             return;
@@ -231,6 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (newCategory === null || newCategory.trim() === '') {
             return;
         }
+        
+        const newDueDate = prompt('Editar prazo (AAAA-MM-DD):', currentDueDate);
 
         try {
             await fetch(`${API_URL}/api/tarefas/${id}`, {
@@ -239,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text: newText, category: newCategory })
+                body: JSON.stringify({ text: newText, category: newCategory, dueDate: newDueDate })
             });
             renderTasks();
         } catch (error) {
@@ -278,8 +288,9 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const taskText = taskInput.value.trim();
         const taskCategory = taskCategoryInput.value.trim() || 'Geral';
+        const taskDueDate = taskDueDateInput.value.trim(); // Pega o valor do novo input
         if (taskText) {
-            addTask(taskText, taskCategory);
+            addTask(taskText, taskCategory, taskDueDate);
         }
     });
 
