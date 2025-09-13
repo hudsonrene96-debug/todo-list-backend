@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'seu-segredo-super-secreto'; // Mude esta string por uma complexa
 
 const app = express();
+// A variável de ambiente do Render é acessada diretamente.
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());

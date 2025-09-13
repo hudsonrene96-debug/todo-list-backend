@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskForm = document.getElementById('task-form');
     const taskInput = document.getElementById('task-input');
     const taskList = document.getElementById('task-list');
+    const taskCategoryInput = document.getElementById('task-category'); // Novo campo para a categoria
+    const filterCategorySelect = document.getElementById('filter-category'); // Menu para filtrar
 
     // URLs da API
     const API_URL = 'https://todo-list-backend-5qku.onrender.com';
@@ -63,9 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('userId', userId);
                 checkAuth();
             } else {
-                // Mensagem de erro no console para melhor depuração
                 console.error(data.message || 'Erro no login.');
-                alert(data.message || 'Erro no login.'); // Usando alert() temporariamente para feedback imediato
+                alert(data.message || 'Erro no login.');
             }
         } catch (error) {
             console.error('Erro de rede:', error);
@@ -101,10 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Funções de Tarefas com autenticação ---
 
     // Rota GET: Buscar tarefas do usuário
-    async function renderTasks() {
+    async function renderTasks(category = null) {
         taskList.innerHTML = '';
+        let url = `${API_URL}/api/tarefas`;
+        if (category && category !== 'all') {
+            url += `?category=${encodeURIComponent(category)}`;
+        }
+
         try {
-            const response = await fetch(`${API_URL}/api/tarefas`, {
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -115,7 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task._id}">
-                        <span>${task.text}</span>
+                        <div class="task-info">
+                            <span>${task.text}</span>
+                            <small class="task-category">${task.category || 'Geral'}</small>
+                        </div>
                         <button class="edit-btn" data-id="${task._id}">Editar</button>
                         <button class="delete-btn" data-id="${task._id}">Remover</button>
                     `;
@@ -129,8 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.edit-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const taskId = e.target.dataset.id;
-                        const taskText = e.target.previousElementSibling.textContent;
-                        editTask(taskId, taskText);
+                        const taskText = e.target.previousElementSibling.firstElementChild.textContent;
+                        const taskCategory = e.target.previousElementSibling.lastElementChild.textContent;
+                        editTask(taskId, taskText, taskCategory);
                     });
                 });
                 document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -155,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Rota POST: Adicionar nova tarefa para o usuário
-    async function addTask(text) {
+    async function addTask(text, category) {
         try {
             await fetch(`${API_URL}/api/tarefas`, {
                 method: 'POST',
@@ -163,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text })
+                body: JSON.stringify({ text, category })
             });
             renderTasks();
             taskInput.value = '';
@@ -210,12 +220,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Nova função para editar o texto da tarefa
-    async function editTask(id, currentText) {
+    // Nova função para editar o texto e categoria da tarefa
+    async function editTask(id, currentText, currentCategory) {
         const newText = prompt('Editar tarefa:', currentText);
         if (newText === null || newText.trim() === '') {
             return;
         }
+
+        const newCategory = prompt('Editar categoria:', currentCategory);
+        if (newCategory === null || newCategory.trim() === '') {
+            return;
+        }
+
         try {
             await fetch(`${API_URL}/api/tarefas/${id}`, {
                 method: 'PUT',
@@ -223,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text: newText })
+                body: JSON.stringify({ text: newText, category: newCategory })
             });
             renderTasks();
         } catch (error) {
@@ -261,9 +277,15 @@ document.addEventListener('DOMContentLoaded', () => {
     taskForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const taskText = taskInput.value.trim();
+        const taskCategory = taskCategoryInput.value.trim() || 'Geral';
         if (taskText) {
-            addTask(taskText);
+            addTask(taskText, taskCategory);
         }
+    });
+
+    // Adiciona o listener para o filtro de categorias
+    filterCategorySelect.addEventListener('change', (e) => {
+        renderTasks(e.target.value);
     });
 
     // Inicia a verificação de autenticação ao carregar a página

@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minhas Tarefas</title>
-    <!-- Inclui o arquivo de estilos atualizado -->
     <link rel="stylesheet" href="./styles.css">
 </head>
 
@@ -32,6 +31,7 @@
         <!-- Lista de Tarefas -->
         <div id="todo-container" style="display: none;">
             <h1>Minhas Tarefas</h1>
+            <button id="logout-btn" class="btn">Sair</button>
             <!-- Menu para filtrar as tarefas por categoria -->
             <div id="filter-container">
                 <label for="filter-category">Filtrar por Categoria:</label>
@@ -43,10 +43,11 @@
                     <option value="Pessoal">Pessoal</option>
                 </select>
             </div>
-            <!-- Formulário para adicionar novas tarefas com categoria -->
+            <!-- Formulário para adicionar novas tarefas com categoria e prazo -->
             <form id="task-form">
                 <input type="text" id="task-input" placeholder="Adicionar nova tarefa..." required>
                 <input type="text" id="task-category" placeholder="Categoria (ex: Trabalho)">
+                <input type="date" id="task-due-date" title="Prazo da Tarefa">
                 <button type="submit" class="btn">Adicionar</button>
             </form>
             <!-- A lista de tarefas será renderizada aqui -->

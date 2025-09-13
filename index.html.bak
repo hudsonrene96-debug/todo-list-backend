@@ -1,43 +1,59 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minhas Tarefas</title>
-    <!--link rel="stylesheet" href="style.css"-->
-	<link rel="stylesheet" href="styles.css">
+    <!-- Inclui o arquivo de estilos atualizado -->
+    <link rel="stylesheet" href="./styles.css">
 </head>
+
 <body>
     <div class="container">
+        <!-- Autenticação -->
         <div id="auth-container">
-            <h2>Login</h2>
+            <h2>Bem-vindo</h2>
             <form id="login-form">
-                <input type="text" id="login-username" placeholder="Usuário" required>
-                <input type="password" id="login-password" placeholder="Senha" required>
-                <button type="submit">Entrar</button>
+                <input type="text" id="login-username" placeholder="Nome de Utilizador" required>
+                <input type="password" id="login-password" placeholder="Palavra-passe" required>
+                <button type="submit" class="btn">Entrar</button>
             </form>
             <p>Não tem uma conta? <a href="#" id="show-register">Cadastre-se</a></p>
-
-            <div id="register-container" style="display: none;">
-                <h2>Cadastro</h2>
-                <form id="register-form">
-                    <input type="text" id="register-username" placeholder="Novo usuário" required>
-                    <input type="password" id="register-password" placeholder="Nova senha" required>
-                    <button type="submit">Cadastrar</button>
-                </form>
-                <p><a href="#" id="show-login">Já tem uma conta? Faça login</a></p>
-            </div>
+            <form id="register-form" style="display: none;">
+                <input type="text" id="register-username" placeholder="Nome de Utilizador" required>
+                <input type="password" id="register-password" placeholder="Palavra-passe" required>
+                <button type="submit" class="btn">Cadastrar</button>
+            </form>
+            <p id="register-message" style="display: none;"></p>
+            <p><a href="#" id="show-login" style="display: none;">Já tem uma conta? Faça login</a></p>
         </div>
 
+        <!-- Lista de Tarefas -->
         <div id="todo-container" style="display: none;">
             <h1>Minhas Tarefas</h1>
+            <!-- Menu para filtrar as tarefas por categoria -->
+            <div id="filter-container">
+                <label for="filter-category">Filtrar por Categoria:</label>
+                <select id="filter-category">
+                    <option value="all">Todas</option>
+                    <option value="Geral">Geral</option>
+                    <option value="Trabalho">Trabalho</option>
+                    <option value="Estudos">Estudos</option>
+                    <option value="Pessoal">Pessoal</option>
+                </select>
+            </div>
+            <!-- Formulário para adicionar novas tarefas com categoria -->
             <form id="task-form">
                 <input type="text" id="task-input" placeholder="Adicionar nova tarefa..." required>
-                <button type="submit">Adicionar</button>
+                <input type="text" id="task-category" placeholder="Categoria (ex: Trabalho)">
+                <button type="submit" class="btn">Adicionar</button>
             </form>
+            <!-- A lista de tarefas será renderizada aqui -->
             <ul id="task-list"></ul>
         </div>
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>

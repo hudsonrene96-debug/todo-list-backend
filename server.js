@@ -35,7 +35,9 @@ const User = mongoose.model('User', userSchema);
 const taskSchema = new mongoose.Schema({
     text: { type: String, required: true },
     completed: { type: Boolean, default: false },
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' }
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    category: { type: String, required: false },
+    dueDate: { type: Date, required: false } // Adicionamos a nova propriedade de prazo
 });
 
 // Modelo de Tarefa
@@ -89,10 +91,15 @@ app.post('/api/login', async (req, res) => {
 
 // --- Rotas de Tarefas (Protegidas) ---
 
-// Rota GET: Listar tarefas do usuário
+// Rota GET: Listar tarefas do usuário (com ordenação por prazo)
 app.get('/api/tarefas', auth, async (req, res) => {
     try {
-        const tasks = await Task.find({ userId: req.userId });
+        const query = { userId: req.userId };
+        if (req.query.category) {
+            query.category = req.query.category;
+        }
+        // As tarefas não completadas vêm primeiro, ordenadas por prazo.
+        const tasks = await Task.find(query).sort({ completed: 1, dueDate: 1 });
         res.status(200).json(tasks);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -103,7 +110,9 @@ app.get('/api/tarefas', auth, async (req, res) => {
 app.post('/api/tarefas', auth, async (req, res) => {
     const task = new Task({
         text: req.body.text,
-        userId: req.userId // Associa a tarefa ao ID do usuário
+        userId: req.userId,
+        category: req.body.category || 'Geral',
+        dueDate: req.body.dueDate // Adiciona o prazo
     });
     try {
         const newTask = await task.save();
@@ -135,6 +144,12 @@ app.put('/api/tarefas/:id', auth, async (req, res) => {
         }
         if (req.body.completed !== undefined) {
             updates.completed = req.body.completed;
+        }
+        if (req.body.category !== undefined) {
+            updates.category = req.body.category;
+        }
+        if (req.body.dueDate !== undefined) {
+            updates.dueDate = req.body.dueDate;
         }
 
         const updatedTask = await Task.findOneAndUpdate(
