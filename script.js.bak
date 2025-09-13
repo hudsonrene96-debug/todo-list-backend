@@ -4,10 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const loginUsernameInput = document.getElementById('login-username');
     const loginPasswordInput = document.getElementById('login-password');
-    const registerContainer = document.getElementById('register-container');
     const registerForm = document.getElementById('register-form');
-    const registerUsernameInput = document.getElementById('register-username');
-    const registerPasswordInput = document.getElementById('register-password');
     const showRegisterLink = document.getElementById('show-register');
     const showLoginLink = document.getElementById('show-login');
     const todoContainer = document.getElementById('todo-container');
@@ -19,6 +16,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskDueDateInput = document.getElementById('task-due-date');
     const logoutBtn = document.getElementById('logout-btn');
 
+    // Referências ao novo modal de edição
+    const editModal = document.getElementById('edit-modal');
+    const closeBtn = document.querySelector('.close-btn');
+    const editForm = document.getElementById('edit-form');
+    const editTaskIdInput = document.getElementById('edit-task-id');
+    const editText = document.getElementById('edit-text');
+    const editCategory = document.getElementById('edit-category');
+    const editDueDate = document.getElementById('edit-due-date');
+
     // URLs da API
     const API_URL = 'https://todo-list-backend-5qku.onrender.com';
     let token = localStorage.getItem('token');
@@ -26,17 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funções para alternar as telas
     function showLogin() {
-        registerForm.style.display = 'none';
-        showRegisterLink.style.display = 'block';
-        loginForm.style.display = 'block';
-        showLoginLink.style.display = 'none';
+        document.getElementById('register-form').style.display = 'none';
+        document.getElementById('show-register').style.display = 'block';
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('show-login').style.display = 'none';
     }
 
     function showRegister() {
-        loginForm.style.display = 'none';
-        showRegisterLink.style.display = 'none';
-        registerForm.style.display = 'block';
-        showLoginLink.style.display = 'block';
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('show-register').style.display = 'none';
+        document.getElementById('register-form').style.display = 'block';
+        document.getElementById('show-login').style.display = 'block';
     }
 
     // Função para verificar o status de login
@@ -81,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função de cadastro
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = registerUsernameInput.value;
-        const password = registerPasswordInput.value;
+        const username = document.getElementById('register-username').value;
+        const password = document.getElementById('register-password').value;
         try {
             const response = await fetch(`${API_URL}/api/register`, {
                 method: 'POST',
@@ -130,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 Categoria: ${task.category || 'Geral'} | Prazo: ${dueDate}
                             </small>
                         </div>
-                        <button class="edit-btn" data-id="${task._id}">Editar</button>
+                        <button class="edit-btn" data-id="${task._id}" data-text="${task.text}" data-category="${task.category}" data-duedate="${task.dueDate}">Editar</button>
                         <button class="delete-btn" data-id="${task._id}">Remover</button>
                     `;
                     if (task.completed) {
@@ -142,11 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.edit-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const taskId = e.target.dataset.id;
-                        const taskElement = e.target.parentElement;
-                        const taskText = taskElement.querySelector('.task-info span').textContent;
-                        const taskCategory = taskElement.querySelector('.task-details').textContent.split('|')[0].replace('Categoria: ', '').trim();
-                        const taskDueDate = taskElement.querySelector('.task-details').textContent.split('|')[1].replace('Prazo: ', '').trim();
-                        editTask(taskId, taskText, taskCategory, taskDueDate);
+                        const taskText = e.target.dataset.text;
+                        const taskCategory = e.target.dataset.category;
+                        const taskDueDate = e.target.dataset.duedate;
+                        openEditModal(taskId, taskText, taskCategory, taskDueDate);
                     });
                 });
                 document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -206,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Rota PUT: Atualizar o status de uma tarefa do usuário (agora com edição de texto)
+    // Rota PUT: Atualizar o status de uma tarefa do usuário
     async function toggleTaskCompleted(id, completed) {
         try {
             await fetch(`${API_URL}/api/tarefas/${id}`, {
@@ -223,22 +228,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Nova função para editar o texto, categoria e prazo da tarefa
-    async function editTask(id, currentText, currentCategory, currentDueDate) {
-        const newText = prompt('Editar tarefa:', currentText);
-        if (newText === null || newText.trim() === '') {
-            return;
-        }
+    // Lógica para abrir e fechar o modal
+    function openEditModal(id, text, category, dueDate) {
+        editTaskIdInput.value = id;
+        editText.value = text;
+        editCategory.value = category;
+        editDueDate.value = dueDate ? dueDate.split('T')[0] : '';
+        editModal.style.display = 'flex';
+    }
 
-        const newCategory = prompt('Editar categoria:', currentCategory);
-        if (newCategory === null || newCategory.trim() === '') {
+    closeBtn.addEventListener('click', () => {
+        editModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (event) => {
+        if (event.target === editModal) {
+            editModal.style.display = 'none';
+        }
+    });
+
+    // Rota PUT: Salvar as edições do modal
+    editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const taskId = editTaskIdInput.value;
+        const newText = editText.value.trim();
+        const newCategory = editCategory.value.trim();
+        const newDueDate = editDueDate.value;
+
+        if (newText === '') {
+            alert('O texto da tarefa não pode estar vazio.');
             return;
         }
-        
-        const newDueDate = prompt('Editar prazo (AAAA-MM-DD):', currentDueDate);
 
         try {
-            await fetch(`${API_URL}/api/tarefas/${id}`, {
+            await fetch(`${API_URL}/api/tarefas/${taskId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -246,11 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({ text: newText, category: newCategory, dueDate: newDueDate })
             });
+            editModal.style.display = 'none';
             renderTasks();
         } catch (error) {
             alert('Não foi possível editar a tarefa.');
         }
-    }
+    });
 
     // Eventos para alternar a exibição
     showRegisterLink.addEventListener('click', (e) => {
@@ -262,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         showLogin();
     });
-    
+
     // Adiciona o listener do formulário de tarefas
     taskForm.addEventListener('submit', (e) => {
         e.preventDefault();

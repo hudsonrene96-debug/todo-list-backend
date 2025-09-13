@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function openEditModal(id, text, category, dueDate) {
         editTaskIdInput.value = id;
         editText.value = text;
-        editCategory.value = category;
+        editCategory.value = category; // Define a categoria selecionada
         editDueDate.value = dueDate ? dueDate.split('T')[0] : '';
         editModal.style.display = 'flex';
     }
