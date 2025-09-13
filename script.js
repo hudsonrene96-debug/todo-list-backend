@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Referências aos elementos HTML
+    // Acessamos os elementos do DOM para manipular a interface do usuário.
     const authContainer = document.getElementById('auth-container');
     const loginForm = document.getElementById('login-form');
     const loginUsernameInput = document.getElementById('login-username');
@@ -26,16 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const editTaskIdInput = document.getElementById('edit-task-id');
     const editText = document.getElementById('edit-text');
     const editCategory = document.getElementById('edit-category');
-    const editStartDate = document.getElementById('edit-start-date'); // Novo
+    const editStartDate = document.getElementById('edit-start-date'); 
     const editDueDate = document.getElementById('edit-due-date');
-    const editStatus = document.getElementById('edit-status'); // Novo
+    const editStatus = document.getElementById('edit-status'); 
 
     // URLs da API
     const API_URL = 'https://todo-list-backend-5qku.onrender.com';
+    // Armazenamento de token e ID do usuário
     let token = localStorage.getItem('token');
     let userId = localStorage.getItem('userId');
 
-    // Funções para alternar as telas
+    // Funções para alternar as telas de login/cadastro
     function showLogin() {
         document.getElementById('register-form').style.display = 'none';
         document.getElementById('show-register').style.display = 'block';
@@ -115,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Funções de Tarefas com autenticação ---
 
     // Rota GET: Buscar tarefas do usuário
+    // Renderiza a lista de tarefas, aplicando filtros de categoria se necessário.
     async function renderTasks(category = null) {
         taskList.innerHTML = '';
         let url = `${API_URL}/api/tarefas`;
@@ -133,10 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 tasks.forEach(task => {
                     const li = document.createElement('li');
                     
+                    // Formata as datas para exibição
                     const startDate = task.startDate ? new Date(task.startDate).toLocaleDateString('pt-BR') : 'N/A';
                     const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('pt-BR') : 'N/A';
                     
-                    // Adiciona a tag de status
+                    // Define a classe CSS e o texto da tag com base no status da tarefa
                     let statusClass = '';
                     let statusText = '';
                     switch (task.status) {
@@ -154,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             break;
                     }
 
+                    // Insere o HTML da tarefa na lista
                     li.innerHTML = `
                         <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task._id}">
                         <div class="task-info">
@@ -168,12 +173,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="edit-btn" data-id="${task._id}" data-text="${task.text}" data-category="${task.category}" data-start-date="${task.startDate}" data-due-date="${task.dueDate}" data-status="${task.status}">Editar</button>
                         <button class="delete-btn" data-id="${task._id}">Remover</button>
                     `;
+                    // Adiciona a classe 'completed' se a tarefa estiver concluída
                     if (task.completed) {
                         li.classList.add('completed');
                     }
                     taskList.appendChild(li);
                 });
 
+                // Adiciona os event listeners aos botões de edição, remoção e checkbox
                 document.querySelectorAll('.edit-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const taskId = e.target.dataset.id;
@@ -182,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const taskStartDate = e.target.dataset.startDate;
                         const taskDueDate = e.target.dataset.dueDate;
                         const taskStatus = e.target.dataset.status;
-                        openEditModal(taskId, taskText, taskCategory, taskStartDate, taskDueDate, taskStatus); // Atualizado
+                        openEditModal(taskId, taskText, taskCategory, taskStartDate, taskDueDate, taskStatus);
                     });
                 });
                 document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -205,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Rota POST: Adicionar nova tarefa para o usuário
+    // Envia os dados de uma nova tarefa para a API.
     async function addTask(text, category, startDate, dueDate) {
         try {
             await fetch(`${API_URL}/api/tarefas`, {
@@ -213,9 +221,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text, category, startDate, dueDate, status: 'to-do' }) // Adiciona o status inicial
+                // Adiciona o status inicial 'to-do' para novas tarefas
+                body: JSON.stringify({ text, category, startDate, dueDate, status: 'to-do' }) 
             });
             renderTasks();
+            // Limpa os campos do formulário após adicionar
             taskInput.value = '';
             taskCategoryInput.value = '';
             taskStartDateInput.value = '';
@@ -226,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Rota DELETE: Deletar tarefa do usuário
+    // Envia uma requisição de exclusão para a API.
     async function deleteTask(id) {
         if (!confirm('Tem certeza de que deseja remover esta tarefa?')) {
             return;
@@ -244,8 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Rota PUT: Atualizar o status de uma tarefa do usuário
+    // Atualiza o status e a conclusão da tarefa com base no checkbox.
     async function toggleTaskCompleted(id, completed) {
         try {
+            // Define o status 'completed' se marcado, 'to-do' se desmarcado
             const status = completed ? 'completed' : 'to-do';
             await fetch(`${API_URL}/api/tarefas/${id}`, {
                 method: 'PUT',
@@ -253,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ completed, status }) // Envia o novo status
+                body: JSON.stringify({ completed, status }) 
             });
             renderTasks();
         } catch (error) {
@@ -263,12 +276,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Lógica para abrir e fechar o modal
     function openEditModal(id, text, category, startDate, dueDate, status) {
+        // Pré-preenche os campos do modal com os dados da tarefa
         editTaskIdInput.value = id;
         editText.value = text;
         editCategory.value = category;
         editStartDate.value = startDate ? startDate.split('T')[0] : '';
         editDueDate.value = dueDate ? dueDate.split('T')[0] : '';
-        editStatus.value = status; // Define o status atual da tarefa
+        editStatus.value = status;
         editModal.style.display = 'flex';
     }
 
@@ -283,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Rota PUT: Salvar as edições do modal
+    // Envia os dados atualizados da tarefa para a API.
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const taskId = editTaskIdInput.value;
@@ -304,7 +319,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ text: newText, category: newCategory, startDate: newStartDate, dueDate: newDueDate, status: newStatus }) // Envia todos os campos
+                // Envia todos os campos atualizados, incluindo status
+                body: JSON.stringify({ text: newText, category: newCategory, startDate: newStartDate, dueDate: newDueDate, status: newStatus }) 
             });
             editModal.style.display = 'none';
             renderTasks();
