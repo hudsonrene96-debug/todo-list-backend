@@ -40,7 +40,8 @@ form {
 }
 
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+input[type="date"] {
     padding: 0.75rem;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -51,7 +52,8 @@ input[type="password"] {
 }
 
 input[type="text"]:focus,
-input[type="password"]:focus {
+input[type="password"]:focus,
+input[type="date"]:focus {
     border-color: #3498db;
     outline: none;
 }
